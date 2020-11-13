@@ -16,14 +16,13 @@ class _MainTabPageState extends State<MainTabPage>
     with SingleTickerProviderStateMixin {
   TabController _tabController;
   double _currentAnimValue = 0;
+  int _currentTab = 0;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _tabController = TabController(vsync: this, length: 4);
     _tabController.addListener(() => onTabChange());
     _tabController.animation.addListener(() {
-      print("_currentAnimValue::${_tabController.animation.value}");
       setState(() {
         _currentAnimValue = _tabController.animation.value;
       });
@@ -31,7 +30,9 @@ class _MainTabPageState extends State<MainTabPage>
   }
 
   void onTabChange() {
-    print("${_tabController.animation.value}");
+    setState(() {
+      _currentTab = _tabController.index;
+    });
   }
 
   @override
@@ -82,7 +83,7 @@ class _MainTabPageState extends State<MainTabPage>
                             isScrollable: true,
                             controller: _tabController,
                             tabs: [
-                              getTab("关注", 0),
+                              attentionTab(),
                               getTab("推荐", 1),
                               getTab("热榜", 2),
                               getTab("圈子", 3),
@@ -121,12 +122,28 @@ class _MainTabPageState extends State<MainTabPage>
         ));
   }
 
+  Widget attentionTab() {
+    return Container(
+      height: 55,
+      alignment: Alignment.bottomCenter,
+      child: Row(
+        children: <Widget>[
+          getTab("关注", 0),
+          Offstage(
+            offstage: _currentTab != 0,
+            child: Icon(Icons.accessibility_new),
+          )
+        ],
+      ),
+    );
+  }
+
   Widget getTab(String text, int index) {
     return CustomTabWidget(
       text,
       Colors.black,
       Colors.blueGrey,
-      16,
+      14,
       animValue:
           _currentAnimValue >= index + 1 || _currentAnimValue <= index - 1
               ? 0

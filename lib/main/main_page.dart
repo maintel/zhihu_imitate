@@ -12,13 +12,14 @@ class MainPage extends StatefulWidget {
   }
 }
 
-class MainPageState extends State<MainPage> with SingleTickerProviderStateMixin {
+class MainPageState extends State<MainPage>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
 
   final List<BottomNavigationBarItem> bottomBarItem = [
     BottomNavigationBarItem(
         icon: Icon(Icons.home),
-        title: Text("首页"), 
+        title: Text("首页"),
         backgroundColor: Colors.red,
         activeIcon: Icon(Icons.ac_unit)),
     BottomNavigationBarItem(
@@ -26,8 +27,7 @@ class MainPageState extends State<MainPage> with SingleTickerProviderStateMixin 
         title: Text("会员"),
         backgroundColor: Colors.red),
     BottomNavigationBarItem(
-        icon: Icon(Icons.map), title: Text("发现"), 
-        backgroundColor: Colors.red),
+        icon: Icon(Icons.map), title: Text("发现"), backgroundColor: Colors.red),
     BottomNavigationBarItem(
         icon: Icon(Icons.message),
         title: Text("消息"),
@@ -53,10 +53,11 @@ class MainPageState extends State<MainPage> with SingleTickerProviderStateMixin 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       bottomNavigationBar: BottomNavigationBar(
         items: bottomBarItem,
         currentIndex: _currentIndex,
-         type: BottomNavigationBarType.fixed,
+        type: BottomNavigationBarType.fixed,
         onTap: (index) {
           if (_currentIndex != index) {
             _controller.jumpToPage(index);

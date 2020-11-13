@@ -24,14 +24,9 @@ class CustomTabWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    log("animValue:${animValue}");
     var currentTextSize = NumUtil.getNumByValueDouble(
         textSize * (animValue * (scale - 1) + 1), 3);
-    log("currentTextSize:${currentTextSize}");
-
     return Container(
-      width: 60,
-      height: 50,
       child: Center(
         child: Text(
           text,

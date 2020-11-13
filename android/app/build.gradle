@@ -64,4 +64,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+
+    implementation "io.flutter:flutter_embedding_debug:1.0.0-6bc433c6b6b5b98dcf4cc11aff31cdee90849f32"
+    implementation "io.flutter:armeabi_v7a_debug:1.0.0-6bc433c6b6b5b98dcf4cc11aff31cdee90849f32"
 }
