@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:zhihu_imitate/main/main_tab/second_tab/recommend_page.dart';
 import 'package:zhihu_imitate/view/custom_sliver.dart';
 import 'package:zhihu_imitate/view/custom_tab.dart';
 
@@ -103,11 +104,7 @@ class _MainTabPageState extends State<MainTabPage>
                 child: Text("aaaa"),
               ),
             ),
-            Container(
-              child: Center(
-                child: Text("bbbb"),
-              ),
-            ),
+            RecommendPage(),
             Container(
               child: Center(
                 child: Text("cccc"),

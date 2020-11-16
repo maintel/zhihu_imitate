@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 Widget userCenterTitleDivdingLine() {
@@ -28,3 +29,15 @@ class DividingLine extends StatelessWidget {
     );
   }
 }
+
+// 滑动移除卡片
+// class DragRemoveCard extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Stack(
+//       children: <Widget>[
+//           Dismissible(child: null, feedback: null)
+//       ],
+//     );
+//   }
+// }
