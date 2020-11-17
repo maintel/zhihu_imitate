@@ -1,6 +1,11 @@
+import 'dart:math';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:zhihu_imitate/view/custom_dismissible.dart';
+import 'package:zhihu_imitate/view/image_view.dart';
 
 Widget userCenterTitleDivdingLine() {
   return Container(
@@ -30,14 +35,206 @@ class DividingLine extends StatelessWidget {
   }
 }
 
-// 滑动移除卡片
-// class DragRemoveCard extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Stack(
-//       children: <Widget>[
-//           Dismissible(child: null, feedback: null)
-//       ],
-//     );
-//   }
-// }
+// 模仿知乎的滑动移除卡片
+// 基本思路
+// 1、卡片支持滑动删除
+// 2、第一层的卡片被移除后第二层的卡片上移到第一层并且有一个放大的动画
+// 3、淡入一个新的第二层卡片
+// 最关键的在于第二步
+// - 在第一层和第二层之间增加一个中间层用来做缩放动画，中间层的数据和第二层一样
+// - 当第一层卡片被移除后，中间层卡片做放大移动动画，此时第二层卡片透明度为0，第一层卡片透明度为0，
+// - 等移动动画完成后，设置数据，同时将第一层卡片透明度设置回来，将中间层卡片透明度设为0并复位，同时将第二层卡片做渐显动画
+
+class DragRemoveCard extends StatefulWidget {
+  final List<String> list = [
+    "111",
+    "2222",
+    "3333",
+    "4444",
+    "5555",
+    "6666",
+    "777",
+    "8888",
+    "9999",
+    "aaaaa"
+  ];
+
+  int currentIndex = 0;
+
+  @override
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return _DragRemoveCardState();
+  }
+}
+
+class _DragRemoveCardState extends State<DragRemoveCard>
+    with SingleTickerProviderStateMixin {
+  bool doAnim = false;
+  Animation<double> animation;
+  AnimationController _scaleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = new AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this);
+    animation = new Tween(begin: 80.0, end: 100.0).animate(_scaleController)
+      ..addListener(() {
+        setState(() {});
+      });
+
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          doAnim = false;
+          _scaleController.reset();
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print("animation.value::${animation.value}");
+    return Stack(
+      children: <Widget>[
+        Container(
+          width: MediaQuery.of(context).size.width,
+          transform: Matrix4.translationValues(0, 10, 0),
+          height: 100,
+          color: Colors.yellow[600],
+          child: Text(widget.list[widget.currentIndex + 1]),
+        ),
+        Container(
+          width: MediaQuery.of(context).size.width,
+          color: Colors.blueAccent[400],
+          height: 100,
+          child: Text(widget.list[widget.currentIndex + 1]),
+        ),
+        MyDismissible(
+          key: Key(widget.currentIndex.toString()),
+          dragStartBehavior: DragStartBehavior.down,
+          direction: MyDismissDirection.horizontal,
+          background: Container(color: Colors.transparent),
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            color: Colors.blueAccent[400],
+            height: doAnim ? animation.value : 100,
+            child: Text(widget.list[widget.currentIndex]),
+          ),
+          onDismissed: (direction) {
+            setState(() {
+              widget.currentIndex++;
+              doAnim = true;
+              _scaleController.forward();
+            });
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class CardFlipWidget extends StatefulWidget {
+  @override
+  _CardFlipWidgetState createState() => _CardFlipWidgetState();
+}
+
+class _CardFlipWidgetState extends State<CardFlipWidget> {
+  var currentPage = 4.0;
+
+  @override
+  Widget build(BuildContext context) {
+    PageController controller = PageController(initialPage: 4);
+    controller.addListener(() {
+      setState(() {
+        print("controller.page:${controller.page}");
+        currentPage = controller.page;
+      });
+    });
+    return Stack(
+      children: <Widget>[
+        CardScrollWidget(currentPage),
+        Positioned.fill(
+          child: PageView.builder(
+            itemCount: maxPageSize,
+            controller: controller,
+            reverse: true,
+            itemBuilder: (context, index) {
+              return Container();
+            },
+          ),
+        )
+      ],
+    );
+  }
+}
+
+var cardAspectRatio = 12.0 / 16.0;
+var widgetAspectRatio = cardAspectRatio * 1.2;
+var maxPageSize = 5;
+
+class CardScrollWidget extends StatelessWidget {
+  final currentPage;
+  final padding = 20.0;
+  final verticalInset = 20.0;
+
+  CardScrollWidget(this.currentPage);
+
+  @override
+  Widget build(BuildContext context) {
+    print("widgetAspectRatio::${widgetAspectRatio}");
+    return new AspectRatio(
+      aspectRatio: widgetAspectRatio,
+      child: LayoutBuilder(
+        builder: (context, contraints) {
+          print(contraints.maxHeight);
+          print(contraints.maxHeight);
+          var width = contraints.maxWidth;
+          var height = contraints.maxHeight;
+
+          var safeWidth = width - 2 * padding;
+          var safeHeight = height - 2 * padding;
+
+          var heightOfPrimaryCard = safeHeight;
+          var widthOfPrimaryCard = heightOfPrimaryCard * cardAspectRatio;
+
+          var primaryCardLeft = safeWidth - widthOfPrimaryCard;
+          var horizontalInset = primaryCardLeft / 2;
+
+          List<Widget> cardList = new List();
+
+          for (var i = 0; i < maxPageSize; i++) {
+            var delta = i - currentPage;
+            bool isOnRight = delta > 0;
+
+            var start = padding +
+                max(
+                    primaryCardLeft -
+                        horizontalInset * -delta * (isOnRight ? 15 : 1),
+                    0.0);
+            print("start::${start}");
+            var cardItem = Positioned.directional(
+              top: padding + verticalInset * max(-delta, 0.0),
+              bottom: padding + verticalInset * max(-delta, 0.0),
+              start: start,
+              textDirection: TextDirection.rtl,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16.0),
+                child: AspectRatio(
+                  aspectRatio: cardAspectRatio,
+                  child: Image.asset(loadImage("owl.jpg"), fit: BoxFit.cover),
+                ),
+              ),
+            );
+            cardList.add(cardItem);
+          }
+          return Stack(
+            children: cardList,
+          );
+        },
+      ),
+    );
+  }
+}

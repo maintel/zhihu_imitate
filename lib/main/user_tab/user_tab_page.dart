@@ -67,8 +67,16 @@ class _UserTabPageState extends State<UserTabPage> {
             ],
           ),
         ),
-        _toolsWidget()
+        _toolsWidget(),
+        _question(),
       ]),
+    );
+  }
+
+  // 回答问题列表卡片
+  Widget _question(){
+    return SliverToBoxAdapter(
+      child:  DragRemoveCard(),
     );
   }
 
