@@ -45,6 +45,17 @@ class DividingLine extends StatelessWidget {
 // - 当第一层卡片被移除后，中间层卡片做放大移动动画，此时第二层卡片透明度为0，第一层卡片透明度为0，
 // - 等移动动画完成后，设置数据，同时将第一层卡片透明度设置回来，将中间层卡片透明度设为0并复位，同时将第二层卡片做渐显动画
 
+/// 最终实现的思路
+/// 实际上两层卡片就足够了
+/// 第一层卡片使用 Dismissible 配合 Offstage ，当滑动删除后，使用 Offstage 使第一层不可见，
+/// 接着执行动画使第二层卡片上移并放大，当缩放移动动画结束后立即做以下操作
+/// - 第一层的 Offstage 可见，
+/// - 使第二层卡片透明度为0
+/// - 使第二层卡片复位
+/// 做完以上三个操作后接着执行渐显动画同时更新第二层卡片的数据即可。
+/// 
+/// 接下来要处理的事情： 当滑动到最后时处理方式，动态更新数据
+
 class DragRemoveCard extends StatefulWidget {
   final List<String> list = [
     "111",
@@ -69,73 +80,101 @@ class DragRemoveCard extends StatefulWidget {
 }
 
 class _DragRemoveCardState extends State<DragRemoveCard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool doAnim = false;
   Animation<double> animation;
   AnimationController _scaleController;
+
+  Animation<double> opacityAnimation;
+  AnimationController _opacityController;
+  bool hide = false;
+  double second0pacity = 1;
 
   @override
   void initState() {
     super.initState();
     _scaleController = new AnimationController(
-        duration: const Duration(milliseconds: 500), vsync: this);
-    animation = new Tween(begin: 80.0, end: 100.0).animate(_scaleController)
+        duration: const Duration(milliseconds: 1000), vsync: this);
+    animation = new Tween(begin: 1.0, end: 0.0).animate(_scaleController)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          setState(() {
+            hide = false;
+            second0pacity = 0;
+            doAnim = true;
+          });
+          _scaleController.reset();
+          _opacityController.forward();
+        }
+      })
       ..addListener(() {
         setState(() {});
       });
-
-    animation.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        setState(() {
-          doAnim = false;
-          _scaleController.reset();
-        });
-      }
-    });
+    _opacityController = new AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this);
+    opacityAnimation =
+        new Tween(begin: 0.0, end: 1.0).animate(_opacityController)
+          ..addListener(() {
+            setState(() {});
+          })
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              setState(() {
+                doAnim = false;
+                _opacityController.reset();
+                second0pacity = 1;
+              });
+            }
+          });
   }
 
   @override
   Widget build(BuildContext context) {
-    print("animation.value::${animation.value}");
     return Stack(
       children: <Widget>[
-        Container(
-          width: MediaQuery.of(context).size.width,
-          transform: Matrix4.translationValues(0, 10, 0),
-          height: 100,
-          color: Colors.yellow[600],
-          child: Text(widget.list[widget.currentIndex + 1]),
-        ),
-        Container(
-          width: MediaQuery.of(context).size.width,
-          color: Colors.blueAccent[400],
-          height: 100,
-          child: Text(widget.list[widget.currentIndex + 1]),
-        ),
-        MyDismissible(
-          key: Key(widget.currentIndex.toString()),
-          dragStartBehavior: DragStartBehavior.down,
-          direction: MyDismissDirection.horizontal,
-          background: Container(color: Colors.transparent),
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            color: Colors.blueAccent[400],
-            height: doAnim ? animation.value : 100,
-            child: Text(widget.list[widget.currentIndex]),
-          ),
-          onDismissed: (direction) {
-            setState(() {
-              widget.currentIndex++;
-              doAnim = true;
+        // 第二层做上移动画，做渐显动画
+        Opacity(
+            opacity: doAnim ? opacityAnimation.value : second0pacity,
+            child: Center(
+                child: Container(
+              width: MediaQuery.of(context).size.width - animation.value * 20,
+              color: Colors.blueAccent[400],
+              transform: Matrix4.translationValues(0, animation.value * 10, 0),
+              height: 100,
+              child: Text(widget
+                  .list[hide ? widget.currentIndex : widget.currentIndex + 1]),
+              // ),
+            ))),
+
+        //第一层 滑动 使用显示隐藏控制
+        Offstage(
+          offstage: hide,
+          child: MyDismissible(
+            key: Key(widget.currentIndex.toString()),
+            dragStartBehavior: DragStartBehavior.down,
+            direction: MyDismissDirection.horizontal,
+            background: Container(color: Colors.transparent),
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              color: Colors.blueAccent[400],
+              height: 100,
+              child: Text(widget.list[widget.currentIndex]),
+            ),
+            onDismissed: (direction) {
+              setState(() {
+                hide = true;
+                widget.currentIndex++;
+              });
               _scaleController.forward();
-            });
-          },
-        ),
+            },
+          ),
+        )
       ],
     );
   }
 }
 
+// 卡片堆叠式切换效果
 class CardFlipWidget extends StatefulWidget {
   @override
   _CardFlipWidgetState createState() => _CardFlipWidgetState();
@@ -174,6 +213,7 @@ class _CardFlipWidgetState extends State<CardFlipWidget> {
 var cardAspectRatio = 12.0 / 16.0;
 var widgetAspectRatio = cardAspectRatio * 1.2;
 var maxPageSize = 5;
+
 
 class CardScrollWidget extends StatelessWidget {
   final currentPage;

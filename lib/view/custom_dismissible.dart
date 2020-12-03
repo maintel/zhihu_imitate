@@ -356,7 +356,6 @@ class _DismissibleState extends State<MyDismissible> with TickerProviderStateMix
 
   void _updateMoveAnimation() {
     final double end = _dragExtent.sign;
-    print("end::$end");
     _moveAnimation = _moveController.drive(
       Tween<Offset>(
         begin: Offset.zero,
